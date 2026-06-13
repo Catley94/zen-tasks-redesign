@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAppState } from './state';
-import { TaskDetailModal } from './task-detail';
-import { QuickAddTaskModal } from './quick-add';
-import { ProfileManager } from './primitives';
+import { TaskDetailModal } from './modals/task-detail';
+import { QuickAddTaskModal } from './modals/quick-add';
+import { ProfileManager } from './components/primitives';
 
 import { TodayScreen, GoalScreen, ProjectScreen } from './screens/screens-a';
 import { ZenScreen, OnboardingScreen, ReviewScreen, SettingsScreen, EmptyScreen, NudgeScreen } from './screens/screens-b';

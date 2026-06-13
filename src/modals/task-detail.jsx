@@ -3,13 +3,13 @@
 // most relevant meta (where it lives, due, priority, time), and manage subtasks.
 
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
-import { TOKENS, btnReset, PRIORITY_LABEL, PRIORITY_COLOR } from './tokens';
-import { PROJECTS, PROJECT_SECTIONS, CATEGORIES } from './data';
-import { Close, Check, Plus, Edit, Trash, ChevD, ChevL, ChevR, Clock, Calendar, CalToday, Bell, Dot } from './icons';
-import { renderMarkdown } from './markdown';
-import { keyOf, todayKey, monthMatrix, fmtDayLabel, addDays, MONTHS, MONTHS_SHORT, WEEKDAYS_SHORT, WEEK_HEADERS, isToday, sameMonth, parseKey, friendlyDue } from './dates';
-import { PriorityDot, SectionLabel } from './primitives';
-import { CatIcon } from './screens/categories';
+import { TOKENS, btnReset, PRIORITY_LABEL, PRIORITY_COLOR } from '../lib/tokens';
+import { PROJECTS, PROJECT_SECTIONS, CATEGORIES } from '../lib/data';
+import { Close, Check, Plus, Edit, Trash, ChevD, ChevL, ChevR, Clock, Calendar, CalToday, Bell, Dot } from '../components/icons';
+import { renderMarkdown } from '../lib/markdown';
+import { keyOf, todayKey, monthMatrix, fmtDayLabel, addDays, MONTHS, MONTHS_SHORT, WEEKDAYS_SHORT, WEEK_HEADERS, isToday, sameMonth, parseKey, friendlyDue } from '../lib/dates';
+import { PriorityDot, SectionLabel } from '../components/primitives';
+import { CatIcon } from '../screens/categories';
 
 const DUE_OPTIONS = ['—', 'Today', 'Tomorrow', 'This week', 'Next week', 'Overdue'];
 const EST_OPTIONS = ['—', '2m', '5m', '10m', '15m', '20m', '30m', '45m', '1h', '2h', '3h', '4h'];

@@ -4,7 +4,7 @@
 // [data-tour="…"] within the current app frame, so it scopes to one instance.
 
 import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
-import { TOKENS, btnReset } from './tokens';
+import { TOKENS, btnReset } from '../lib/tokens';
 import { Leaf, Close } from './icons';
 
 export const TOUR_STEPS_DESKTOP = [

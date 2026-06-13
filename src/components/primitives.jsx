@@ -2,10 +2,10 @@
 // AskZenOverlay, TaskRow, ProjectPill, PriorityDot, DensityToggle, StaleBadge, etc.
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { TOKENS, btnReset, PRIORITY_LABEL, PRIORITY_COLOR } from './tokens';
-import { PROJECTS, GOALS, CATEGORIES, PROJECT_STALE_DAYS, lastActiveDays, MAX_SIDEBAR_PROJECTS, ZEN_NUDGES, NOTIFICATIONS } from './data';
+import { TOKENS, btnReset, PRIORITY_LABEL, PRIORITY_COLOR } from '../lib/tokens';
+import { PROJECTS, GOALS, CATEGORIES, PROJECT_STALE_DAYS, lastActiveDays, MAX_SIDEBAR_PROJECTS, ZEN_NUDGES, NOTIFICATIONS } from '../lib/data';
 import { Leaf, Sparkles, Bell, Search, ChevD, ChevR, Plus, Close, Pin, Moon, MoreV, Check, Target, Folder, Tag, Dot, Settings, Help, User, Home, Grid, ListTodo, Arr, Trash, CalToday, CalMonth, Flame, Heart, Bag, Wallet, Calendar } from './icons';
-import { useZenAI } from './state';
+import { useZenAI } from '../state';
 
 // ——— CatIcon — maps a category icon key to the right icon component ———
 const CATEGORY_ICON_MAP = { tag: Tag, home: Home, heart: Heart, bag: Bag, wallet: Wallet, leaf: Leaf, flame: Flame, calendar: Calendar };

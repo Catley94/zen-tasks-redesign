@@ -2,11 +2,11 @@
 // Each screen gets two variations (variant 'a'/'b'). Frame 'desktop' or 'mobile'.
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { TOKENS, btnReset, PRIORITY_LABEL, PRIORITY_COLOR } from '../tokens';
-import { GOALS, GOAL, PROJECTS, CATEGORIES, PROJECT_SECTIONS } from '../data';
-import { Close, Plus, ChevD, ChevR, Check, Target, Folder, Leaf, Edit, MoreV, Arr, Trash, Sparkles, Moon } from '../icons';
-import { Screen } from '../screen';
-import { TaskRow, SectionLabel, QuietBadge, GoalChip, AddToFocusModal } from '../primitives';
+import { TOKENS, btnReset, PRIORITY_LABEL, PRIORITY_COLOR } from '../lib/tokens';
+import { GOALS, GOAL, PROJECTS, CATEGORIES, PROJECT_SECTIONS } from '../lib/data';
+import { Close, Plus, ChevD, ChevR, Check, Target, Folder, Leaf, Edit, MoreV, Arr, Trash, Sparkles, Moon } from '../components/icons';
+import { Screen } from '../components/screen';
+import { TaskRow, SectionLabel, QuietBadge, GoalChip, AddToFocusModal } from '../components/primitives';
 
 // ====== FOCUS (internal id 'today') ======
 function TodayScreen({ app, variant, frame, onNav, onAsk }) {

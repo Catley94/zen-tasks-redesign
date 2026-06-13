@@ -2,12 +2,12 @@
 // Each takes (app, variant, frame, onNav, onAsk).
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { TOKENS, btnReset, PRIORITY_LABEL } from '../tokens';
-import { GOALS, PROJECTS, UPCOMING, ZEN_NUDGES } from '../data';
-import { Close, Plus, ChevD, ChevR, Check, Leaf, Edit, MoreV, Arr, Trash, Sparkles, Mic, Send, Flame } from '../icons';
-import { SectionLabel, ChatBubble, ThinkingDots, GoalChip, DensityToggle } from '../primitives';
+import { TOKENS, btnReset, PRIORITY_LABEL } from '../lib/tokens';
+import { GOALS, PROJECTS, UPCOMING, ZEN_NUDGES } from '../lib/data';
+import { Close, Plus, ChevD, ChevR, Check, Leaf, Edit, MoreV, Arr, Trash, Sparkles, Mic, Send, Flame } from '../components/icons';
+import { SectionLabel, ChatBubble, ThinkingDots, GoalChip, DensityToggle } from '../components/primitives';
 import { useZenAI } from '../state';
-import { Screen } from '../screen';
+import { Screen } from '../components/screen';
 
 // ====== ASK ZEN (full page) ======
 function ZenScreen({ app, variant, frame, onNav, onAsk }) {

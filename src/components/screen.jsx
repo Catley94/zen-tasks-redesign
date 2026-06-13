@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { TOKENS, btnReset } from './tokens';
-import { GOALS, PROJECTS } from './data';
+import { TOKENS, btnReset } from '../lib/tokens';
+import { GOALS, PROJECTS } from '../lib/data';
 import { Sparkles, Search, ChevD, ChevR, Plus, Close, Pin, Moon, MoreV, Settings, Grid, CalToday, CalMonth, Home, Check, Flame } from './icons';
 import { Sidebar, TopBar, ZenCorner, NotificationsBell, NotificationToast, AskZenOverlay, CommandPalette } from './primitives';
 import { ProductTour } from './tour';

@@ -4,12 +4,12 @@
 // Shift+Enter adds and opens the new task. Routed via app.quickAdd / openQuickAdd.
 
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
-import { TOKENS, btnReset, PRIORITY_LABEL, PRIORITY_COLOR } from './tokens';
-import { PROJECTS, PROJECT_SECTIONS, CATEGORIES } from './data';
-import { Close, Check, Plus, Edit, Trash, ChevD, ChevL, ChevR, Clock, Calendar, CalToday, Bell, Dot } from './icons';
-import { MONTHS, WEEK_HEADERS, isToday, sameMonth, monthMatrix, keyOf, parseKey, todayKey, friendlyDue } from './dates';
-import { PriorityDot } from './primitives';
-import { CatIcon } from './screens/categories';
+import { TOKENS, btnReset, PRIORITY_LABEL, PRIORITY_COLOR } from '../lib/tokens';
+import { PROJECTS, PROJECT_SECTIONS, CATEGORIES } from '../lib/data';
+import { Close, Check, Plus, Edit, Trash, ChevD, ChevL, ChevR, Clock, Calendar, CalToday, Bell, Dot } from '../components/icons';
+import { MONTHS, WEEK_HEADERS, isToday, sameMonth, monthMatrix, keyOf, parseKey, todayKey, friendlyDue } from '../lib/dates';
+import { PriorityDot } from '../components/primitives';
+import { CatIcon } from '../screens/categories';
 
 const QA_PRIORITIES = ['seedling', 'growing', 'rooted', 'falling'];
 

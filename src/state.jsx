@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Anthropic from '@anthropic-ai/sdk';
-import { GOALS, PROJECTS, TASKS, CATEGORIES, FOCUS_TASK_IDS, NOTIFICATIONS, PROJECT_STALE_DAYS, lastActiveDays, TASK_SECTIONS } from './data';
-import { friendlyDue, fmtDayLabel, diffDays, isToday, reminderInfo, todayKey, seedDate, isPast } from './dates';
+import { GOALS, PROJECTS, TASKS, CATEGORIES, FOCUS_TASK_IDS, NOTIFICATIONS, PROJECT_STALE_DAYS, lastActiveDays, TASK_SECTIONS } from './lib/data';
+import { friendlyDue, fmtDayLabel, diffDays, isToday, reminderInfo, todayKey, seedDate, isPast } from './lib/dates';
 
 const anthropic = new Anthropic({
   apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY || '',

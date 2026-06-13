@@ -1,7 +1,7 @@
 // Summoned Ask Zen overlay — consistent across all prototypes.
 import { useState, useEffect, useRef } from 'react';
-import { btnReset } from './tokens';
-import { useZenAI } from './state';
+import { btnReset } from '../lib/tokens';
+import { useZenAI } from '../state';
 import { Sparkles, Leaf, User } from './icons';
 
 export function AskZen({ open, onClose, tone }) {

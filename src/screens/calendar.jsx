@@ -3,12 +3,12 @@
 // which keeps the fuzzy `due` label in sync and fires a notification.
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { TOKENS, btnReset } from '../tokens';
-import { PROJECTS } from '../data';
-import { Screen } from '../screen';
-import { SectionLabel, TaskRow } from '../primitives';
-import { Check, ChevD, ChevL, ChevR, Clock, Close, Leaf, Plus, CalMonth } from '../icons';
-import { MONTHS, WEEK_HEADERS, todayKey, parseKey, keyOf, sameMonth, isToday, fmtDayLabel, monthMatrix } from '../dates';
+import { TOKENS, btnReset } from '../lib/tokens';
+import { PROJECTS } from '../lib/data';
+import { Screen } from '../components/screen';
+import { SectionLabel, TaskRow } from '../components/primitives';
+import { Check, ChevD, ChevL, ChevR, Clock, Close, Leaf, Plus, CalMonth } from '../components/icons';
+import { MONTHS, WEEK_HEADERS, todayKey, parseKey, keyOf, sameMonth, isToday, fmtDayLabel, monthMatrix } from '../lib/dates';
 
 export function taskColor(app, t) {
   const p = (app.projectById ? app.projectById(t.projectId) : PROJECTS.find(p => p.id === t.projectId));

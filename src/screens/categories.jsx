@@ -3,10 +3,10 @@
 // edit/delete menu. A "New category" affordance + a name/colour/icon editor modal.
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { TOKENS, btnReset } from '../tokens';
-import { Screen } from '../screen';
-import { SectionLabel, TaskRow } from '../primitives';
-import { Tag, Home, Heart, Bag, Wallet, Leaf, Flame, Calendar, Plus, Close, Edit, Trash, MoreV, Grid } from '../icons';
+import { TOKENS, btnReset } from '../lib/tokens';
+import { Screen } from '../components/screen';
+import { SectionLabel, TaskRow } from '../components/primitives';
+import { Tag, Home, Heart, Bag, Wallet, Leaf, Flame, Calendar, Plus, Close, Edit, Trash, MoreV, Grid } from '../components/icons';
 
 const CATEGORY_ICON_MAP = { tag: Tag, home: Home, heart: Heart, bag: Bag, wallet: Wallet, leaf: Leaf, flame: Flame, calendar: Calendar };
 const CATEGORY_ICON_KEYS = ['tag', 'home', 'heart', 'bag', 'wallet', 'leaf', 'flame', 'calendar'];
