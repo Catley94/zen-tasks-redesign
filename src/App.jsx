@@ -4,8 +4,14 @@ import { TaskDetailModal } from './modals/task-detail';
 import { QuickAddTaskModal } from './modals/quick-add';
 import { ProfileManager } from './components/primitives';
 
-import { TodayScreen, GoalScreen, ProjectScreen } from './screens/screens-a';
-import { ZenScreen, OnboardingScreen, ReviewScreen, SettingsScreen, EmptyScreen, NudgeScreen } from './screens/screens-b';
+import { TodayScreen } from './screens/focus';
+import { GoalScreen } from './screens/goal';
+import { ProjectScreen } from './screens/project';
+import { ZenScreen, NudgeScreen } from './screens/zen';
+import { OnboardingScreen } from './screens/onboarding';
+import { ReviewScreen } from './screens/review';
+import { SettingsScreen } from './screens/settings';
+import { EmptyScreen } from './screens/empty';
 import { CategoriesScreen } from './screens/categories';
 import { CalendarScreen, AgendaScreen } from './screens/calendar';
 
