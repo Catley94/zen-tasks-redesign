@@ -220,7 +220,7 @@ export function Screen({ frame, app, active, onNav, onAsk, title, subtitle, crum
     );
   }
   return (
-    <div ref={rootRef} className={app.dyslexiaFont ? 'dys-font' : undefined} style={{ width: 1200, height: 760, background: TOKENS.bg, color: TOKENS.ink,
+    <div ref={rootRef} className={app.dyslexiaFont ? 'dys-font' : undefined} style={{ width: '100%', height: '100dvh', background: TOKENS.bg, color: TOKENS.ink,
       fontFamily: TOKENS.fontSans, fontSize: 14, display: 'flex', position: 'relative', overflow: 'hidden' }}>
       <Sidebar active={active} onNav={onNav} app={app} onSearch={()=>setPalette(true)}/>
       <main data-tour="main" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
