@@ -7,11 +7,10 @@ import { TOKENS, btnReset } from '../lib/tokens';
 import { Screen } from '../components/screen';
 import { SectionLabel, TaskRow } from '../components/primitives';
 import { Tag, Home, Heart, Bag, Wallet, Leaf, Flame, Calendar, Plus, Close, Edit, Trash, MoreV, Grid } from '../components/icons';
+import { CATEGORY_ICON_KEYS, CATEGORY_COLORS, UNCAT } from '../domain/constants';
 
+// icon key → component. Presentation, so it stays in the view (the key list lives in the model).
 const CATEGORY_ICON_MAP = { tag: Tag, home: Home, heart: Heart, bag: Bag, wallet: Wallet, leaf: Leaf, flame: Flame, calendar: Calendar };
-const CATEGORY_ICON_KEYS = ['tag', 'home', 'heart', 'bag', 'wallet', 'leaf', 'flame', 'calendar'];
-// Earthy palette drawn from the existing project colours — shared chroma family.
-const CATEGORY_COLORS = ['#8a6a3a', '#5a8a3a', '#2a8a8a', '#3a8a6e', '#a06a3a', '#6e8a3a', '#2f7a8a', '#9a4a4a'];
 
 export function CatIcon({ icon, size = 13 }) {
   const I = CATEGORY_ICON_MAP[icon] || Tag;
@@ -206,7 +205,6 @@ export function CategoriesScreen({ app, variant, frame, onNav, onAsk, categoryId
   const cats = app.categories;
   // Virtual system bucket: everything with no project and no category lands here. Always shown,
   // not editable/deletable — it's the default home for a quickly-captured task.
-  const UNCAT = { id: '__uncat', name: 'Uncategorised', color: '#8a8f86', icon: 'tag', system: true };
   const allCats = [...cats, UNCAT];
   const nameFor = (id) => id === '__uncat' ? 'Uncategorised' : (app.categoryById(id)?.name || 'Category');
   const focusOne = categoryId ? allCats.filter(c => c.id === categoryId) : allCats;

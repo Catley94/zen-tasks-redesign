@@ -4,17 +4,12 @@
 
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { TOKENS, btnReset, PRIORITY_LABEL, PRIORITY_COLOR } from '../lib/tokens';
-import { PROJECTS, PROJECT_SECTIONS, CATEGORIES } from '../lib/data';
 import { Close, Check, Plus, Edit, Trash, ChevD, ChevL, ChevR, Clock, Calendar, CalToday, Bell, Dot } from '../components/icons';
 import { renderMarkdown } from '../lib/markdown';
 import { keyOf, todayKey, monthMatrix, fmtDayLabel, addDays, MONTHS, MONTHS_SHORT, WEEKDAYS_SHORT, WEEK_HEADERS, isToday, sameMonth, parseKey, friendlyDue } from '../lib/dates';
 import { PriorityDot, SectionLabel } from '../components/primitives';
 import { CatIcon } from '../screens/categories';
-
-const DUE_OPTIONS = ['—', 'Today', 'Tomorrow', 'This week', 'Next week', 'Overdue'];
-const EST_OPTIONS = ['—', '2m', '5m', '10m', '15m', '20m', '30m', '45m', '1h', '2h', '3h', '4h'];
-const PRIORITY_KEYS = ['seedling', 'growing', 'rooted', 'falling'];
-const REMINDER_OPTIONS = [['none', "Don't remind me"], ['same-day', 'On the day'], ['day-before', 'A day before'], ['2-days', '2 days before'], ['week-before', 'A week before']];
+import { DUE_OPTIONS, EST_OPTIONS, PRIORITY_KEYS, REMINDER_OPTIONS } from '../domain/constants';
 
 // Auto-growing textarea that stays in sync with its content.
 function AutoTextarea({ value, onChange, style, ...rest }) {
@@ -268,7 +263,7 @@ function PickGroupLabel({ children }) {
 function PlacementPicker({ task, app }) {
   const [open, setOpen] = useState(false);
   useEffect(() => { setOpen(false); }, [task.id]);
-  const project = PROJECTS.find(p => p.id === task.projectId);
+  const project = app.projectById(task.projectId);
   const category = task.categoryId ? app.categoryById(task.categoryId) : null;
   const choose = (place) => { app.placeTask(task.id, place); setOpen(false); };
   const rowStyle = (active) => ({ ...btnReset, width: '100%', display: 'flex', alignItems: 'center', gap: 9, padding: '8px 12px',
@@ -298,8 +293,8 @@ function PlacementPicker({ task, app }) {
               {!project && !category && <Check size={12} stroke={2.5} style={{ marginLeft: 'auto', color: TOKENS.green }}/>}
             </button>
             <PickGroupLabel>Projects</PickGroupLabel>
-            {(app.projects || PROJECTS).map(p => {
-              const secs = PROJECT_SECTIONS[p.id] || [];
+            {app.projects.map(p => {
+              const secs = app.sectionsForProject(p.id);
               return (
                 <button key={p.id} onClick={()=>choose({ projectId: p.id, sectionId: secs[0] ? secs[0].id : null })} style={rowStyle(task.projectId === p.id)}>
                   <span style={{ width: 9, height: 9, borderRadius: 999, background: p.color, flexShrink: 0 }}/>
@@ -411,7 +406,7 @@ export function TaskDetailModal({ app }) {
   }, [app.openTaskId, app.closeTask]);
   if (!task) return null;
 
-  const project = PROJECTS.find(p => p.id === task.projectId);
+  const project = app.projectById(task.projectId);
   const category = task.categoryId ? app.categoryById(task.categoryId) : null;
   const tGoals = app.goalsForTask ? app.goalsForTask(task.id) : [];
   const subDone = task.subtasks.filter(s => s.done).length;
@@ -453,7 +448,7 @@ export function TaskDetailModal({ app }) {
             <MetaCell label="Lives in">
               <PlacementPicker task={task} app={app}/>
             </MetaCell>
-            {project && (PROJECT_SECTIONS[project.id] || []).length > 0 && (
+            {project && app.sectionsForProject(project.id).length > 0 && (
               <MetaCell label="Section">
                 <div style={{ position: 'relative' }}>
                   <select value={app.sectionOf(task.id) || ''} onChange={e=>app.setTaskSection(task.id, e.target.value || null)}
@@ -461,7 +456,7 @@ export function TaskDetailModal({ app }) {
                       padding: '3px 24px 3px 10px', borderRadius: 999, color: app.sectionOf(task.id) ? TOKENS.ink : TOKENS.sub,
                       background: TOKENS.bg, border: `1px solid ${TOKENS.line}`, outline: 'none', maxWidth: 150 }}>
                     <option value="">No section</option>
-                    {PROJECT_SECTIONS[project.id].map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    {app.sectionsForProject(project.id).map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                   <ChevD size={11} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', color: TOKENS.sub, pointerEvents: 'none' }}/>
                 </div>

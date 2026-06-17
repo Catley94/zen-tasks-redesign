@@ -4,7 +4,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { TOKENS, btnReset } from '../lib/tokens';
-import { GOALS, PROJECTS } from '../lib/data';
 import { Target, Edit, Plus, Sparkles, Moon, Close, Check, ChevD, ChevR } from '../components/icons';
 import { Screen } from '../components/screen';
 import { SectionLabel, GoalChip, QuietBadge } from '../components/primitives';
@@ -12,7 +11,7 @@ import { SectionLabel, GoalChip, QuietBadge } from '../components/primitives';
 // ====== GOAL ======
 function GoalScreen({ app, variant, frame, onNav, onAsk, goalId = 'g1', initialPhase }) {
   const noGoals = app.goals.length === 0;
-  const goal = app.goalById(goalId) || app.goals[0] || GOALS[0];
+  const goal = app.goalById(goalId) || app.goals[0];
   const isPrimary = app.primaryGoalId === goal.id;
   const validPhase = (pid) => goal.phases.some(p => p.id === pid) ? pid : null;
   const [phase, setPhase] = useState(validPhase(initialPhase) || goal.phases[0]?.id);
@@ -242,14 +241,14 @@ function LinkProjectsModal({ open, onClose, goal, app }) {
   useEffect(() => {
     if (open) {
       const ids = new Set();
-      (app.projects || PROJECTS).forEach(p => { if (goal.id in (app.projectGoals[p.id]||{})) ids.add(p.id); });
+      app.projects.forEach(p => { if (goal.id in (app.projectGoals[p.id]||{})) ids.add(p.id); });
       setDraft(ids);
     }
   }, [open, goal.id]);
   if (!open) return null;
   const toggle = (pid) => setDraft(s => { const n = new Set(s); n.has(pid) ? n.delete(pid) : n.add(pid); return n; });
   const save = () => {
-    (app.projects || PROJECTS).forEach(p => {
+    app.projects.forEach(p => {
       const cur = new Set(Object.keys(app.projectGoals[p.id]||{}));
       if (draft.has(p.id)) cur.add(goal.id); else cur.delete(goal.id);
       app.setProjectGoalIds(p.id, Array.from(cur));
@@ -273,9 +272,9 @@ function LinkProjectsModal({ open, onClose, goal, app }) {
           Tick a project to link it. You'll set which phase it sits in from the goal page.
         </div>
         <div style={{ flex: 1, overflow: 'auto' }}>
-          {(app.projects || PROJECTS).map(p => {
+          {app.projects.map(p => {
             const checked = draft.has(p.id);
-            const otherGoals = Object.keys(app.projectGoals[p.id]||{}).filter(gid => gid !== goal.id).map(gid => GOALS.find(g=>g.id===gid)).filter(Boolean);
+            const otherGoals = Object.keys(app.projectGoals[p.id]||{}).filter(gid => gid !== goal.id).map(gid => app.goalById(gid)).filter(Boolean);
             return (
               <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', borderTop: `1px solid ${TOKENS.lineSoft}`, cursor: 'pointer',
                 background: checked ? TOKENS.greenTint : 'transparent' }}>

@@ -3,7 +3,6 @@
 
 import React, { useState } from 'react';
 import { TOKENS, btnReset } from '../lib/tokens';
-import { GOAL } from '../lib/data';
 import { Plus, Sparkles, Moon } from '../components/icons';
 import { Screen } from '../components/screen';
 import { TaskRow, SectionLabel, AddToFocusModal } from '../components/primitives';
@@ -11,7 +10,7 @@ import { TaskRow, SectionLabel, AddToFocusModal } from '../components/primitives
 function TodayScreen({ app, variant, frame, onNav, onAsk }) {
   const focusTasks = app.tasks.filter(t => app.focusIds.has(t.id));
   const done = focusTasks.filter(t=>t.done).length;
-  const ph = GOAL.phases[0];
+  const ph = app.primaryGoal?.phases[0];
   const ring = Math.round((done / Math.max(focusTasks.length,1)) * 100);
   const [picker, setPicker] = useState(false);
   const [highlightIds, setHighlightIds] = useState(null);
@@ -34,7 +33,7 @@ function TodayScreen({ app, variant, frame, onNav, onAsk }) {
     // Variation A — ambient morning, one-column focus list
     return (
       <Screen frame={frame} app={app} active="today" onNav={onNav} onAsk={onAsk}
-        title="Focus" subtitle={calm ? null : `${focusTasks.length - done} on your focus list · ${ph.name}`}
+        title="Focus" subtitle={calm ? null : `${focusTasks.length - done} on your focus list · ${ph?.name}`}
         crumbs={['Phase 1', 'Focus']} headerRight={addBtn}>
         <div style={{ padding: '24px 30px 40px', display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 760 }}>
           {!calm && (

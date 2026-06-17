@@ -3,10 +3,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { TOKENS, btnReset } from '../lib/tokens';
-import { GOALS, PROJECTS, UPCOMING } from '../lib/data';
 import { Check, Leaf, Flame } from '../components/icons';
 import { SectionLabel, GoalChip } from '../components/primitives';
 import { Screen } from '../components/screen';
+import { projectReopenNote, projectParkNote } from '../domain/messages';
 
 // One-shot leaf bloom behind the celebration hero. Injected on first mount so the
 // keyframes exist before the hero animates (and only once across the app).
@@ -50,21 +50,8 @@ function ReviewScreen({ app, variant, frame, onNav, onAsk }) {
   const quiet = app.projects.filter(p => app.statusOf(p.id) === 'quiet');
   const completedThisWeek = app.tasks.filter(t=>t.done).slice(0, 5);
   const [mattered, setMattered] = useState("");
-  // ——— celebration data: what actually advanced this week ———
-  const doneTasks = app.tasks.filter(t => t.done);
-  const advanced = (() => {
-    const m = {};
-    doneTasks.forEach(t => { if (t.projectId) m[t.projectId] = (m[t.projectId] || 0) + 1; });
-    return Object.keys(m).map(pid => {
-      const p = (app.projectById ? app.projectById(pid) : PROJECTS.find(x => x.id === pid));
-      const all = app.tasks.filter(t => t.projectId === pid);
-      const done = all.filter(t => t.done).length;
-      return { p, recent: m[pid], total: all.length, done, progress: all.length ? done / all.length : 0 };
-    }).filter(a => a.p).sort((a, b) => b.recent - a.recent || b.progress - a.progress);
-  })();
-  const goalsTouched = [...new Set(advanced.flatMap(a => a.p.goalIds || []))].map(id => GOALS.find(g => g.id === id)).filter(Boolean);
-  const biggest = advanced[0];
-  const otherDone = doneTasks.filter(t => !t.projectId);
+  // Celebration data: what actually advanced this week — derived by the model.
+  const { doneTasks, advanced, goalsTouched, biggest, otherDone } = app.weeklyReview();
 
   const body = variant === 'a' ? (
     <div style={{ padding: '22px 30px 40px', display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 780 }}>
@@ -118,7 +105,7 @@ function ReviewScreen({ app, variant, frame, onNav, onAsk }) {
                 </div>
                 {(a.p.goalIds || []).length > 0 && (
                   <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {(a.p.goalIds || []).map(gid => { const g = GOALS.find(x => x.id === gid); return g ? <GoalChip key={gid} goal={g} primary={app.primaryGoalId === gid} compact/> : null; })}
+                    {(a.p.goalIds || []).map(gid => { const g = app.goalById(gid); return g ? <GoalChip key={gid} goal={g} primary={app.primaryGoalId === gid} compact/> : null; })}
                   </div>
                 )}
               </div>
@@ -158,9 +145,9 @@ function ReviewScreen({ app, variant, frame, onNav, onAsk }) {
                   <div style={{ fontSize: 13.5 }}>{p.name}</div>
                   <div style={{ fontSize: 11.5, color: TOKENS.sub }}>Last touch {p.lastActive}</div>
                 </div>
-                <button onClick={()=>{ app.setProjectStatus(p.id, 'active'); app.notify({ title: 'Reopened gently', summary: `"${p.name}" is back among your active projects.`, body: `"${p.name}" is active again — no pressure, just back in view. Open it whenever you're ready.` }); }}
+                <button onClick={()=>{ app.setProjectStatus(p.id, 'active'); app.notify(projectReopenNote(p.name)); }}
                   style={{ ...btnReset, fontSize: 11.5, padding: '5px 10px', borderRadius: 999, background: TOKENS.tealSoft, color: TOKENS.tealDeep, cursor: 'pointer' }}>Reopen gently</button>
-                <button onClick={()=>{ app.setProjectStatus(p.id, 'parked'); app.notify({ title: 'Parked for later', summary: `"${p.name}" is resting — I won't nudge you about it.`, body: `"${p.name}" is parked. It'll wait quietly; reopen it from the project list whenever you like.` }); }}
+                <button onClick={()=>{ app.setProjectStatus(p.id, 'parked'); app.notify(projectParkNote(p.name)); }}
                   style={{ ...btnReset, fontSize: 11.5, padding: '5px 10px', borderRadius: 999, color: TOKENS.sub, cursor: 'pointer' }}>Park</button>
               </div>
             ))}
@@ -173,8 +160,8 @@ function ReviewScreen({ app, variant, frame, onNav, onAsk }) {
       <div>
         <SectionLabel>Upcoming · next few days</SectionLabel>
         <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {UPCOMING.map(u => {
-            const g = GOALS.find(x => x.id === u.goalId);
+          {app.upcoming.map(u => {
+            const g = app.goalById(u.goalId);
             return (
               <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: TOKENS.surface, border: `1px solid ${TOKENS.line}`, borderRadius: TOKENS.radius }}>
                 <div style={{ width: 4, height: 28, borderRadius: 2, background: g?.color || TOKENS.teal }}/>

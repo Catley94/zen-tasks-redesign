@@ -4,14 +4,13 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { TOKENS, btnReset } from '../lib/tokens';
-import { PROJECTS } from '../lib/data';
 import { Screen } from '../components/screen';
 import { SectionLabel, TaskRow } from '../components/primitives';
 import { Check, ChevD, ChevL, ChevR, Clock, Close, Leaf, Plus, CalMonth } from '../components/icons';
 import { MONTHS, WEEK_HEADERS, todayKey, parseKey, keyOf, sameMonth, isToday, fmtDayLabel, monthMatrix } from '../lib/dates';
 
 export function taskColor(app, t) {
-  const p = (app.projectById ? app.projectById(t.projectId) : PROJECTS.find(p => p.id === t.projectId));
+  const p = app.projectById(t.projectId);
   if (p) return p.color;
   const c = app.categoryById ? app.categoryById(t.categoryId) : null;
   return c ? c.color : TOKENS.green;

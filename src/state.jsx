@@ -1,12 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import Anthropic from '@anthropic-ai/sdk';
-import { GOALS, PROJECTS, TASKS, CATEGORIES, FOCUS_TASK_IDS, NOTIFICATIONS, PROJECT_STALE_DAYS, lastActiveDays, TASK_SECTIONS } from './lib/data';
+import { GOALS, PROJECTS, TASKS, CATEGORIES, FOCUS_TASK_IDS, NOTIFICATIONS, PROJECT_STALE_DAYS, lastActiveDays, TASK_SECTIONS, PROJECT_SECTIONS, UPCOMING } from './lib/data';
 import { friendlyDue, fmtDayLabel, diffDays, isToday, reminderInfo, todayKey, seedDate, isPast } from './lib/dates';
-
-const anthropic = new Anthropic({
-  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY || '',
-  dangerouslyAllowBrowser: true,
-});
+import { UNCAT } from './domain/constants';
+import * as select from './domain/selectors';
+import { buildZenSystemPrompt, callZen } from './domain/zen';
 
 export function useAppState() {
   const [profiles, setProfiles] = useState(() => [
@@ -272,14 +269,18 @@ export function useAppState() {
     const t = allTasks.find(x => x.id === tid); if (!t) return [];
     return goalIdsOf(t.projectId).map(gid => allGoals.find(g => g.id === gid)).filter(Boolean);
   }, [goalIdsOf, allTasks, allGoals]);
-  const tasksForCategory = useCallback((cid) => cid === '__uncat'
-    ? tasks.filter(t => !t.categoryId && !t.projectId)
-    : tasks.filter(t => t.categoryId === cid), [tasks]);
+  const tasksForCategory = useCallback((cid) => select.tasksForCategory(tasks, cid), [tasks]);
   const categoryById = useCallback((id) => allCategories.find(c => c.id === id), [allCategories]);
-  const tasksForDate = useCallback((iso) => tasks.filter(t => t.date === iso), [tasks]);
-  const todayTasks = useCallback(() => tasks.filter(t => t.date === todayKey()), [tasks]);
-  const overdueTasks = useCallback(() => tasks.filter(t => isPast(t.date) && !t.done), [tasks]);
-  const unscheduledTasks = useCallback(() => tasks.filter(t => !t.date && !t.done), [tasks]);
+  const tasksForDate = useCallback((iso) => select.tasksForDate(tasks, iso), [tasks]);
+  const todayTasks = useCallback(() => select.todayTasks(tasks), [tasks]);
+  const overdueTasks = useCallback(() => select.overdueTasks(tasks), [tasks]);
+  const unscheduledTasks = useCallback(() => select.unscheduledTasks(tasks), [tasks]);
+  // Weekly Review aggregation (what advanced this week) — derived by the model.
+  const weeklyReview = useCallback(() => select.weeklyReview(tasks, projectById, goals), [tasks, projectById, goals]);
+  // The custom sections a project defines (raw — empty if none; views add a default if needed).
+  const sectionsForProject = useCallback((pid) => PROJECT_SECTIONS[pid] || [], []);
+  // The goal a fresh "Focus" / phase context hangs off — the resolved primary goal.
+  const primaryGoal = goalById(primaryGoalId);
   allTasksRef.current = allTasks;
   projectGoalsRef.current = projectGoals;
   return { tasks, toggleTask, toggleSub, addTask, setTaskCategory, deleteTask, updateTask, addSubtask, addComment: addCommentTouched, updateComment, deleteComment, scheduleTask, notify, openTaskId, openTask, closeTask, focusIds, toggleFocus, aiMode, setAiMode,
@@ -289,13 +290,13 @@ export function useAppState() {
     moreSheetOpen, openMoreSheet, closeMoreSheet,
     profiles, activeProfileId, activeProfile, switchProfile, addProfile, updateProfile, deleteProfile, manageSpacesOpen, openManageSpaces, closeManageSpaces,
     notifications, markNotifRead, markAllNotifsRead, modeToast, dismissModeToast, pauseModeToast,
-    goals, primaryGoalId, setPrimaryGoalId, goalById, goalIdsOf, projectsForGoal, phaseForProjectInGoal,
+    goals, primaryGoalId, primaryGoal, setPrimaryGoalId, goalById, goalIdsOf, projectsForGoal, phaseForProjectInGoal,
     goalsForProject, goalsForTask, projectGoals, setProjectGoalIds, setProjectPhase,
     addGoal, updateGoal, clearDatabase,
     projects, projectById, addProject, updateProject,
     categories, addCategory, updateCategory, deleteCategory, tasksForCategory, categoryById,
     quickAdd, openQuickAdd, closeQuickAdd,
-    tasksForDate, todayTasks, overdueTasks, unscheduledTasks, sectionOf, setTaskSection, placeTask, setReminder, statusOf, setProjectStatus,
+    tasksForDate, todayTasks, overdueTasks, unscheduledTasks, weeklyReview, sectionsForProject, upcoming: UPCOMING, sectionOf, setTaskSection, placeTask, setReminder, statusOf, setProjectStatus,
     pinnedProjectIds, isProjectPinned, togglePinProject };
 }
 
@@ -309,21 +310,8 @@ export function useZenAI(extraCtx = '') {
     setMessages(m => [...m, { role: 'user', text: userText }]);
     setBusy(true);
     try {
-      const systemPrompt = [
-        "You are Zen, a calm AI companion inside a to-do app. Keep replies short (1–3 sentences), warm, grounded, never urgent. No emoji.",
-        `User goals: ${GOALS.map(g => `${g.name} — ${g.overarching}`).join(' | ')}`,
-        `Active phases: ${GOALS.map(g => g.phases[0] && `${g.name}: ${g.phases[0].name}`).filter(Boolean).join(' | ')}`,
-        `Projects: ${PROJECTS.map(p=>`${p.name} (${Math.round(p.progress*100)}%, ${p.status})`).join('; ')}`,
-        ...GOALS.map(g => `Enthusiasm note for "${g.name}" ${g.enthusiasmWhen}: "${g.enthusiasm}"`),
-        extraCtx,
-      ].join("\n");
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 300,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userText }],
-      });
-      const reply = response.content[0]?.type === 'text' ? response.content[0].text : '';
+      const systemPrompt = buildZenSystemPrompt(GOALS, PROJECTS, extraCtx);
+      const reply = await callZen(systemPrompt, userText);
       setMessages(m => [...m, { role: 'assistant', text: reply.trim() }]);
     } catch {
       setMessages(m => [...m, { role: 'assistant', text: "(I couldn't reach my brain just now — try again in a moment.)" }]);

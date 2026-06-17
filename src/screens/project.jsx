@@ -4,10 +4,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { TOKENS, btnReset } from '../lib/tokens';
-import { PROJECTS, PROJECT_SECTIONS } from '../lib/data';
 import { ChevD, Check, Arr, Folder, Close, ChevR, Plus, Edit } from '../components/icons';
 import { Screen } from '../components/screen';
 import { TaskRow, SectionLabel } from '../components/primitives';
+import { PROJECT_STATUS_KEYS } from '../domain/constants';
+import { projectStatusNote } from '../domain/messages';
 
 // Edit a project's name, note and colour.
 function ProjectEditorModal({ proj, app, onClose }) {
@@ -102,7 +103,9 @@ function GoalCrumbPicker({ goals, current, primaryId, onSelect, onNav }) {
 }
 
 // ====== PROJECT DETAIL (collapsible sections + inline add) ======
-const PROJECT_STATUSES = [['active', 'Active', TOKENS.green], ['quiet', 'Quiet', TOKENS.teal], ['parked', 'Parked', TOKENS.subSoft]];
+// Status keys + labels come from the model; the colour for each is presentation.
+const STATUS_COLOR = { active: TOKENS.green, quiet: TOKENS.teal, parked: TOKENS.subSoft };
+const PROJECT_STATUSES = PROJECT_STATUS_KEYS.map(({ key, label }) => [key, label, STATUS_COLOR[key]]);
 // Header control to mark a project Active / Quiet / Parked.
 function ProjectStatusControl({ app, pid }) {
   const [open, setOpen] = useState(false);
@@ -112,10 +115,8 @@ function ProjectStatusControl({ app, pid }) {
     setOpen(false);
     if (key === cur) return;
     app.setProjectStatus(pid, key);
-    const label = (PROJECT_STATUSES.find(s => s[0] === key) || [, key])[1];
-    const name = ((app.projectById && app.projectById(pid)) || PROJECTS.find(p => p.id === pid) || {}).name;
-    app.notify({ title: 'Project ' + label.toLowerCase(), summary: `"${name}" is now ${label.toLowerCase()}.`,
-      body: key === 'parked' ? `"${name}" is parked — it'll rest quietly and won't nudge you.` : key === 'quiet' ? `"${name}" is marked quiet — still around, just not pressing.` : `"${name}" is active again — back among the things you're moving.` });
+    const name = (app.projectById(pid) || {}).name;
+    app.notify(projectStatusNote(name, key));
   };
   return (
     <div style={{ position: 'relative' }}>
@@ -141,7 +142,7 @@ function ProjectStatusControl({ app, pid }) {
 }
 
 function ProjectScreen({ app, variant, frame, onNav, onAsk, projectId = 'p1' }) {
-  const proj = (app.projectById ? app.projectById(projectId) : PROJECTS.find(p => p.id === projectId));
+  const proj = app.projectById(projectId);
   const tasks = app.tasks.filter(t => t.projectId === proj.id);
   const done = tasks.filter(t=>t.done).length;
   const projGoals = app.goalsForProject ? app.goalsForProject(proj.id) : [];
@@ -157,7 +158,8 @@ function ProjectScreen({ app, variant, frame, onNav, onAsk, projectId = 'p1' }) 
   const crumbPhaseId = crumbGoal ? app.phaseForProjectInGoal(proj.id, crumbGoal.id) : null;
   const crumbPhase = crumbGoal ? crumbGoal.phases.find(p => p.id === crumbPhaseId) : null;
   const otherGoalCount = projGoals.length - 1;
-  const sections = PROJECT_SECTIONS[proj.id] || [{ id: proj.id+'s1', name: 'Tasks' }];
+  const definedSections = app.sectionsForProject(proj.id);
+  const sections = definedSections.length ? definedSections : [{ id: proj.id + 's1', name: 'Tasks' }];
   const [collapsed, setCollapsed] = useState(() => new Set());
   const [adding, setAdding] = useState(null); // section id currently adding to
   const [editOpen, setEditOpen] = useState(false);

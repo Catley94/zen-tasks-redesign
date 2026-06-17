@@ -5,7 +5,6 @@
 
 import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { TOKENS, btnReset, PRIORITY_LABEL, PRIORITY_COLOR } from '../lib/tokens';
-import { PROJECTS, PROJECT_SECTIONS, CATEGORIES } from '../lib/data';
 import { Close, Check, Plus, Edit, Trash, ChevD, ChevL, ChevR, Clock, Calendar, CalToday, Bell, Dot } from '../components/icons';
 import { MONTHS, WEEK_HEADERS, isToday, sameMonth, monthMatrix, keyOf, parseKey, todayKey, friendlyDue } from '../lib/dates';
 import { PriorityDot } from '../components/primitives';

@@ -3,7 +3,6 @@
 
 import React, { useState } from 'react';
 import { TOKENS, btnReset } from '../lib/tokens';
-import { PROJECTS } from '../lib/data';
 import { Sparkles, Mic, Send } from '../components/icons';
 import { SectionLabel, ChatBubble, ThinkingDots } from '../components/primitives';
 import { useZenAI } from '../state';
@@ -76,7 +75,7 @@ function ZenScreen({ app, variant, frame, onNav, onAsk }) {
 // ====== NUDGE / proactive chat notification ======
 function NudgeScreen({ app, variant, frame, onNav, onAsk }) {
   // Full-screen Zen chat appearing as a message from the AI about a stale project
-  const proj = PROJECTS.find(p => p.id === 'p4');
+  const proj = app.projectById('p4');
   const [chat, setChat] = useState([
     { role: 'assistant', text: "I noticed Quiet Hours has been sitting for 14 days. You wrote something about it 3 weeks ago — want me to pull up that note?" },
   ]);
