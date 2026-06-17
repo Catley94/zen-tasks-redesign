@@ -1,0 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
+
+:root {
+  --bg: #f6f2e8; --bg-soft: #f1ecdd; --surface: #fbf7ee; --surface-alt: #fdfaf3;
+  --ink: #2a2e26; --ink-soft: #4a4e45; --sub: #6b6e63; --sub-soft: #8a8d82;
+  --line: #e6ddc9; --line-soft: #efe8d6; --line-softer: #f3edde;
+  --green: #3f6e3a; --green-deep: #2d5228; --green-soft: #d6e2cb; --green-tint: #ebf1e2;
+  --teal: #2a8a8a; --teal-deep: #1f6a6a; --teal-soft: #c8e0e0; --teal-tint: #e0ecec;
+  --warn: #b8733a; --warn-soft: #f1e1cf; --rose: #9a4a4a;
+  --dot-seedling: #a8b89a; --dot-growing: #6b9a4e; --dot-rooted: #3f6e3a; --dot-falling: #b8733a;
+  --radius: 10px; --radius-sm: 6px; --radius-lg: 14px;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-serif: 'EB Garamond', Georgia, serif;
+  --font-mono: ui-monospace, 'SF Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-sans); font-size: 14px; -webkit-font-smoothing: antialiased; }
+.dys-font, .dys-font * { font-family: 'OpenDyslexic', system-ui, sans-serif !important; }
+@keyframes zenFocusPulse {
+  0%   { box-shadow: inset 0 0 0 0 var(--teal-soft), 0 0 0 0 rgba(42,138,138,0); background: transparent; }
+  18%  { box-shadow: inset 3px 0 0 0 var(--teal), 0 0 0 3px rgba(42,138,138,0.18); background: var(--teal-tint); }
+  70%  { box-shadow: inset 3px 0 0 0 var(--teal), 0 0 0 3px rgba(42,138,138,0.10); background: var(--teal-tint); }
+  100% { box-shadow: inset 0 0 0 0 var(--teal-soft), 0 0 0 0 rgba(42,138,138,0); background: transparent; }
+}
+.zen-focus-highlight { animation: zenFocusPulse 1.5s ease-in-out; }
+.zen-focus-highlight:nth-of-type(2) { animation-delay: 0.18s; }
+@keyframes zenToastIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zen-focus-highlight { animation: none; background: var(--teal-tint); box-shadow: inset 3px 0 0 0 var(--teal); }
+}
+.zen-row-more { opacity: 0; transition: opacity .12s; }
+.zen-task-row:hover .zen-row-more, .zen-proj-row:hover .zen-row-more, .zen-row-more[data-open="1"], .zen-row-more:focus-visible { opacity: 1; }
+.zen-proj-row:hover { background: var(--green-tint); }
