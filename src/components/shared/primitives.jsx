@@ -449,7 +449,7 @@ export function AskZenOverlay({ app, open: openProp, onClose: onCloseProp }) {
   const chat = (app && app.zenChat) || { open: false, nonce: 0 };
   const open = openProp !== undefined ? openProp : chat.open;
   const close = onCloseProp || (app && app.closeZenChat) || (()=>{});
-  const { messages, send, busy, reset } = useZenAI(chat.context || '');
+  const { messages, send, busy, reset } = useZenAI(chat.context || '', { app, mode: app && app.aiMode });
   const [text, setText] = useState('');
   const inputRef = useRef(null);
   const handledNonce = useRef(-1);

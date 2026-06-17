@@ -172,9 +172,9 @@ export function Screen({ frame, app, active, onNav, onAsk, title, subtitle, crum
 
   if (frame === 'mobile') {
     return (
-      <div ref={rootRef} className={app.dyslexiaFont ? 'dys-font' : undefined} style={{ width: 360, height: 760, background: TOKENS.bg, color: TOKENS.ink,
+      <div ref={rootRef} className={app.dyslexiaFont ? 'dys-font' : undefined} style={{ width: '100%', height: '100dvh', background: TOKENS.bg, color: TOKENS.ink,
         fontFamily: TOKENS.fontSans, fontSize: 14, display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-        <header style={{ padding: '40px 18px 10px', borderBottom: `1px solid ${TOKENS.line}`, background: TOKENS.surface }}>
+        <header style={{ padding: 'calc(env(safe-area-inset-top, 0px) + 14px) 18px 10px', borderBottom: `1px solid ${TOKENS.line}`, background: TOKENS.surface }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div data-tour="m-space" style={{ width: 24, height: 24, borderRadius: 7, background: app.activeProfile.color, color: '#fff', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 600 }} title={app.activeProfile.name + ' space'}>{app.activeProfile.name[0].toUpperCase()}</div>
             <div style={{ fontSize: 11, color: TOKENS.sub, textTransform: 'uppercase', letterSpacing: 1.2, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{crumbs ? crumbs.map(c => (c && typeof c === 'object') ? c.label : c).join(' · ') : ''}</div>
@@ -197,7 +197,7 @@ export function Screen({ frame, app, active, onNav, onAsk, title, subtitle, crum
             background: TOKENS.green, color: '#fff', display: 'grid', placeItems: 'center', boxShadow: '0 8px 22px rgba(40,80,40,0.34)', cursor: 'pointer' }}>
           <Plus size={22}/>
         </button>
-        <nav data-tour="m-nav" style={{ display: 'flex', borderTop: `1px solid ${TOKENS.line}`, background: TOKENS.surface, paddingBottom: 14 }}>
+        <nav data-tour="m-nav" style={{ display: 'flex', borderTop: `1px solid ${TOKENS.line}`, background: TOKENS.surface, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 14px)' }}>
           {[{id:'agenda',i:<CalToday size={16}/>,l:'Today'},{id:'calendar',i:<CalMonth size={16}/>,l:'Calendar'},{id:'today',i:<Home size={16}/>,l:'Focus'},{id:'zen',i:<Sparkles size={16}/>,l:'Zen',teal:true},{id:'more',i:<MoreV size={16}/>,l:'More'}].map(it => {
             const isActive = it.id==='more' ? moreActive : (active===it.id);
             return (

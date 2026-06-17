@@ -8,6 +8,8 @@ import {
   seedDate, friendlyDue, fmtDayLabel, diffDays, isPast, todayKey,
   reminderInfo, reminderState, formatTime, keyOf,
 } from '../lib/dates.js';
+import { askZen } from '../lib/zenAI.js';
+import { applyZenAction } from '../lib/zenActions.js';
 
 const MAX_TASK_STACK = 3;
 
@@ -561,28 +563,70 @@ export function useAppState() {
   };
 }
 
-export function useZenAI(extraCtx = '') {
+// Build Claude's system prompt from live app state (falls back to seeds).
+function buildZenSystem(app, extraCtx, mode) {
+  const goals = (app && app.goals) || GOALS;
+  const projects = (app && app.projects) || PROJECTS;
+  const tasks = (app && app.tasks) || [];
+  const projName = (id) => (projects.find(p => p.id === id) || {}).name || '—';
+  const lines = [
+    "You are Zen, a calm AI companion inside a to-do app. Keep replies short (1–3 sentences), warm, grounded, never urgent. No emoji. Respond directly with your reply only — no preamble or meta-commentary.",
+    `User goals: ${goals.map(g => `${g.name} — ${g.overarching}`).join(' | ')}`,
+    `Projects: ${projects.map(p => `${p.name} (${Math.round(p.progress * 100)}%, ${p.status})`).join('; ')}`,
+  ];
+  const open = tasks.filter(t => !t.done).slice(0, 40);
+  if (open.length) {
+    lines.push('Current open tasks (id — title — project — due):');
+    lines.push(open.map(t => `${t.id} — ${t.title} — ${projName(t.projectId)} — ${t.due || '—'}`).join('\n'));
+  }
+  if (mode === 'manager') {
+    lines.push("Manager mode: you can act using the tools (add_task, complete_task, add_to_focus). When the user asks to add, change, complete, or focus something, call the right tool — use the exact task ids from the list above. After acting, confirm in one short sentence.");
+  }
+  lines.push(...goals.map(g => `Enthusiasm note for "${g.name}" ${g.enthusiasmWhen}: "${g.enthusiasm}"`));
+  if (extraCtx) lines.push(extraCtx);
+  return lines.filter(Boolean).join('\n');
+}
+
+export function useZenAI(extraCtx = '', { app, mode } = {}) {
   const [messages, setMessages] = useState(DEFAULT_CHAT);
   const [busy, setBusy] = useState(false);
-  const reset = useCallback(() => setMessages(DEFAULT_CHAT), []);
+  // Real Claude history (with tool_use/tool_result blocks), kept across turns.
+  const apiRef = useRef([]);
+  // Refs so the memoized `send` always sees current app/context without restale.
+  const appRef = useRef(app); appRef.current = app;
+  const ctxRef = useRef({ extraCtx, mode }); ctxRef.current = { extraCtx, mode };
+  const reset = useCallback(() => { setMessages(DEFAULT_CHAT); apiRef.current = []; }, []);
   const send = useCallback(async (userText) => {
     setMessages(m => [...m, { role: 'user', text: userText }]);
     setBusy(true);
+    const liveApp = appRef.current;
+    const { extraCtx: ctx, mode: m } = ctxRef.current;
     try {
-      const ctx = [
-        "You are Zen, a calm AI companion inside a to-do app. Keep replies short (1–3 sentences), warm, grounded, never urgent. No emoji.",
-        `User goals: ${GOALS.map(g => `${g.name} — ${g.overarching}`).join(' | ')}`,
-        `Active phases: ${GOALS.map(g => g.phases[0] && `${g.name}: ${g.phases[0].name}`).filter(Boolean).join(' | ')}`,
-        `Projects: ${PROJECTS.map(p=>`${p.name} (${Math.round(p.progress*100)}%, ${p.status})`).join('; ')}`,
-        ...GOALS.map(g => `Enthusiasm note for "${g.name}" ${g.enthusiasmWhen}: "${g.enthusiasm}"`),
-        extraCtx,
-      ].join('\n');
-      // Use Anthropic API if available in this context
-      const reply = await (window.claude?.complete ? window.claude.complete({ messages: [{ role: 'user', content: ctx + '\n\nUser: ' + userText }] }) : Promise.resolve("I'm Zen, your calm companion. I'm here to help you think through what matters most today."));
-      setMessages(m => [...m, { role: 'assistant', text: typeof reply === 'string' ? reply.trim() : reply }]);
+      const system = buildZenSystem(liveApp, ctx, m);
+      const apiMsgs = [...apiRef.current, { role: 'user', content: userText }];
+      let finalText = '';
+      // Agentic loop: keep going while Claude requests tools (bounded).
+      for (let i = 0; i < 6; i++) {
+        const data = await askZen({ system, messages: apiMsgs, mode: m });
+        apiMsgs.push({ role: 'assistant', content: data.content });
+        const toolUses = m === 'manager' && liveApp && data.stop_reason === 'tool_use'
+          ? (data.content || []).filter(b => b.type === 'tool_use')
+          : [];
+        if (toolUses.length === 0) { finalText = data.text || ''; break; }
+        apiMsgs.push({
+          role: 'user',
+          content: toolUses.map(tu => ({
+            type: 'tool_result',
+            tool_use_id: tu.id,
+            content: applyZenAction(liveApp, tu.name, tu.input),
+          })),
+        });
+      }
+      apiRef.current = apiMsgs;
+      setMessages(msgs => [...msgs, { role: 'assistant', text: finalText || 'Done.' }]);
     } catch {
-      setMessages(m => [...m, { role: 'assistant', text: "(I couldn't reach my brain just now — try again in a moment.)" }]);
+      setMessages(msgs => [...msgs, { role: 'assistant', text: "(I couldn't reach my brain just now — try again in a moment.)" }]);
     } finally { setBusy(false); }
-  }, [extraCtx]);
+  }, []);
   return { messages, send, busy, reset };
 }

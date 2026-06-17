@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AppContext } from './components/shared/AppContext.jsx';
 import { useAppState } from './state/useAppState.jsx';
@@ -12,6 +13,25 @@ import ZenScreen from './components/screens/ZenScreen.jsx';
 import ReviewScreen from './components/screens/ReviewScreen.jsx';
 import SettingsScreen from './components/screens/SettingsScreen.jsx';
 import OnboardingScreen from './components/screens/OnboardingScreen.jsx';
+
+// Pick the layout frame from viewport width. The screens read `frame` from
+// context and switch their internal layouts (sidebar vs tab bar, columns vs
+// stacked) accordingly, so this single source drives the whole responsive shell.
+const MOBILE_BREAKPOINT = 768;
+function useFrame() {
+  const query = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`;
+  const [frame, setFrame] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia(query).matches ? 'mobile' : 'desktop'
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = (e) => setFrame(e.matches ? 'mobile' : 'desktop');
+    mql.addEventListener('change', onChange);
+    setFrame(mql.matches ? 'mobile' : 'desktop');
+    return () => mql.removeEventListener('change', onChange);
+  }, [query]);
+  return frame;
+}
 
 function AppShell() {
   const app = useAppState();
@@ -34,7 +54,7 @@ function AppShell() {
     if (base === 'onboarding') return navigate('/onboarding');
   };
 
-  const frame = 'desktop';
+  const frame = useFrame();
 
   const ctx = { app, onNav, frame };
 

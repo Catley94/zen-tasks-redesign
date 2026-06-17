@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../shared/AppContext.jsx';
+import { useZenAI } from '../../state/useAppState.jsx';
 import { TOKENS, btnReset } from '../../data/seeds.js';
 import { Screen } from '../shared/screen.jsx';
 import { SectionLabel } from '../shared/primitives.jsx';
@@ -27,25 +28,14 @@ function ChatBubble({ m }) {
   );
 }
 
-function useZenChat() {
-  const [messages, setMessages] = useState([
-    { role: 'assistant', text: "Morning. What's on your mind?" }
-  ]);
-  const [busy, setBusy] = useState(false);
-  const send = (text) => {
-    setMessages(prev => [...prev, { role: 'user', text }]);
-    setBusy(true);
-    setTimeout(() => {
-      setMessages(prev => [...prev, { role: 'assistant', text: "I hear you. Let me think about that…" }]);
-      setBusy(false);
-    }, 1200);
-  };
-  return { messages, send, busy };
-}
-
 export default function ZenScreen() {
   const { app, onNav, frame } = useApp();
-  const { messages, send, busy } = useZenChat();
+  const { messages, send, busy } = useZenAI(
+    app.aiMode === 'manager'
+      ? 'The user is in Manager mode: act on their requests with the available tools.'
+      : 'The user is in Assistant mode: be a calm thinking partner.',
+    { app, mode: app.aiMode }
+  );
   const [text, setText] = useState('');
 
   const submit = (e) => {
