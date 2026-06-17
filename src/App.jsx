@@ -13,6 +13,17 @@ import ZenScreen from './components/screens/ZenScreen.jsx';
 import ReviewScreen from './components/screens/ReviewScreen.jsx';
 import SettingsScreen from './components/screens/SettingsScreen.jsx';
 import OnboardingScreen from './components/screens/OnboardingScreen.jsx';
+import LoginScreen from './components/screens/LoginScreen.jsx';
+import { TOKENS } from './data/seeds.js';
+
+function Splash({ label = 'Loading…' }) {
+  return (
+    <div style={{ width: '100%', height: '100dvh', background: TOKENS.bg, color: TOKENS.sub,
+      display: 'grid', placeItems: 'center', fontFamily: TOKENS.fontSans, fontSize: 14 }}>
+      {label}
+    </div>
+  );
+}
 
 // Pick the layout frame from viewport width. The screens read `frame` from
 // context and switch their internal layouts (sidebar vs tab bar, columns vs
@@ -57,6 +68,16 @@ function AppShell() {
   const frame = useFrame();
 
   const ctx = { app, onNav, frame };
+
+  if (app.dbMode && !app.authReady) {
+    return <AppContext.Provider value={ctx}><Splash /></AppContext.Provider>;
+  }
+  if (app.dbMode && !app.session) {
+    return <AppContext.Provider value={ctx}><LoginScreen /></AppContext.Provider>;
+  }
+  if (app.dbMode && !app.dbHydrated) {
+    return <AppContext.Provider value={ctx}><Splash label="Loading your data…" /></AppContext.Provider>;
+  }
 
   return (
     <AppContext.Provider value={ctx}>

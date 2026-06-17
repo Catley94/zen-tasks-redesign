@@ -10,8 +10,16 @@ import {
 } from '../lib/dates.js';
 import { askZen } from '../lib/zenAI.js';
 import { applyZenAction } from '../lib/zenActions.js';
+import { supabase } from '../lib/supabase.js';
+import { getDataSource, setDataSource as persistDataSource } from '../lib/dataSource.js';
+import { loadAll, seedDatabase } from '../lib/db/repo.js';
+import * as M from '../lib/db/mappers.js';
+import { useTableSync, useJunctionSync, useSettingsSync } from '../lib/db/sync.js';
 
 const MAX_TASK_STACK = 3;
+// Chosen at load; switching reloads the page so initializers re-run for the new source.
+const DATA_SOURCE = getDataSource();
+const DB_MODE = DATA_SOURCE === 'supabase';
 
 function draftSnapshot(t, sectionId) {
   return {
@@ -22,12 +30,12 @@ function draftSnapshot(t, sectionId) {
 }
 
 export function useAppState() {
-  const [profiles, setProfiles] = useState(() => [
+  const [profiles, setProfiles] = useState(() => DB_MODE ? [] : [
     { id: 'personal', name: 'Personal', color: '#5a8a3a' },
     { id: 'work', name: 'Work', color: '#2a6f8a' },
   ]);
   const [activeProfileId, setActiveProfileId] = useState('personal');
-  const [allTasks, setTasks] = useState(() => TASKS.map((t, i) => {
+  const [allTasks, setTasks] = useState(() => DB_MODE ? [] : TASKS.map((t, i) => {
     const date = seedDate(t.due, i);
     const reminders = (t.reminders || []).map(r => ({ ...r, dateISO: r.dateISO || date }));
     return { ...t, profileId: 'personal', subtasks: (t.subtasks||[]).map(s=>({...s})), comments: (t.comments||[]).map(c=>({...c})), reminders, date, reminder: 'same-day' };
@@ -198,7 +206,7 @@ export function useAppState() {
     setGuard(null); pendingRef.current = null;
   }, [commitDraft, applyStack, snapshotFor]);
 
-  const [focusIds, setFocusIds] = useState(() => new Set(FOCUS_TASK_IDS));
+  const [focusIds, setFocusIds] = useState(() => DB_MODE ? new Set() : new Set(FOCUS_TASK_IDS));
   const toggleFocus = useCallback((id) => setFocusIds(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
 
   const [aiMode, setAiModeRaw] = useState('assistant');
@@ -322,8 +330,8 @@ export function useAppState() {
     emitCustomReminderNote(t.title, r.dateISO, r.time, r.label, tid);
   }, [emitCustomReminderNote]);
 
-  const [primaryGoalRaw, setPrimaryGoalId] = useState('g1');
-  const [allProjects, setProjects] = useState(() => PROJECTS.map(p => ({ ...p, profileId: 'personal' })));
+  const [primaryGoalRaw, setPrimaryGoalId] = useState(DB_MODE ? null : 'g1');
+  const [allProjects, setProjects] = useState(() => DB_MODE ? [] : PROJECTS.map(p => ({ ...p, profileId: 'personal' })));
   const projects = useMemo(() => allProjects.filter(p => (p.profileId||'personal') === activeProfileId), [allProjects, activeProfileId]);
   const projectById = useCallback((id) => allProjects.find(p => p.id === id), [allProjects]);
 
@@ -337,7 +345,7 @@ export function useAppState() {
 
   const updateProject = useCallback((id, patch) => { setProjects(ps => ps.map(p => p.id === id ? { ...p, ...patch } : p)); touchProject(id); }, [touchProject]);
 
-  const [allCategories, setCategories] = useState(() => CATEGORIES.map(c => ({ ...c, profileId: 'personal' })));
+  const [allCategories, setCategories] = useState(() => DB_MODE ? [] : CATEGORIES.map(c => ({ ...c, profileId: 'personal' })));
   const categories = useMemo(() => allCategories.filter(c => (c.profileId||'personal') === activeProfileId), [allCategories, activeProfileId]);
 
   const addCategory = useCallback((cat) => {
@@ -352,12 +360,12 @@ export function useAppState() {
     setTasks(ts => ts.map(t => t.categoryId === id ? { ...t, categoryId: null } : t));
   }, []);
 
-  const [allNotes, setNotes] = useState(() => NOTES.map(n => ({ ...n, profileId: 'personal' })));
+  const [allNotes, setNotes] = useState(() => DB_MODE ? [] : NOTES.map(n => ({ ...n, profileId: 'personal' })));
   const notes = useMemo(() => allNotes.filter(n => (n.profileId||'personal') === activeProfileId), [allNotes, activeProfileId]);
   const allNotesRef = useRef([]); allNotesRef.current = allNotes;
   const noteById = useCallback((id) => allNotesRef.current.find(n => n.id === id), []);
 
-  const [allCollections, setCollections] = useState(() => NOTE_COLLECTIONS.map(c => ({ ...c, profileId: 'personal' })));
+  const [allCollections, setCollections] = useState(() => DB_MODE ? [] : NOTE_COLLECTIONS.map(c => ({ ...c, profileId: 'personal' })));
   const collections = useMemo(() => allCollections.filter(c => (c.profileId||'personal') === activeProfileId), [allCollections, activeProfileId]);
   const collectionById = useCallback((id) => allCollections.find(c => c.id === id), [allCollections]);
   const notesForCollection = useCallback((cid) => cid === '__loose'
@@ -402,7 +410,7 @@ export function useAppState() {
   const statusOf = useCallback((pid) => projectStatus[pid] ?? (PROJECTS.find(p => p.id === pid) || {}).status, [projectStatus]);
   const setProjectStatus = useCallback((pid, status) => { setProjectStatusMap(m => ({ ...m, [pid]: status })); touchProject(pid); }, [touchProject]);
 
-  const [pinnedProjectIds, setPinnedProjectIds] = useState(() => new Set(['p4']));
+  const [pinnedProjectIds, setPinnedProjectIds] = useState(() => DB_MODE ? new Set() : new Set(['p4']));
   const isProjectPinned = useCallback((pid) => pinnedProjectIds.has(pid), [pinnedProjectIds]);
   const togglePinProject = useCallback((pid) => setPinnedProjectIds(s => {
     const n = new Set(s); n.has(pid) ? n.delete(pid) : n.add(pid); return n;
@@ -430,6 +438,7 @@ export function useAppState() {
   }, [pinnedProjectIds, allProjects]);
 
   const [projectGoals, setProjectGoals] = useState(() => {
+    if (DB_MODE) return {};
     const m = {};
     PROJECTS.forEach(p => {
       const entry = {};
@@ -454,7 +463,7 @@ export function useAppState() {
     ...m, [pid]: { ...(m[pid]||{}), [gid]: phaseId }
   })), []);
 
-  const [allGoals, setAllGoals] = useState(() => GOALS.map(g => ({ ...g, profileId: 'personal' })));
+  const [allGoals, setAllGoals] = useState(() => DB_MODE ? [] : GOALS.map(g => ({ ...g, profileId: 'personal' })));
   const goals = useMemo(() => allGoals.filter(g => (g.profileId||'personal') === activeProfileId), [allGoals, activeProfileId]);
   const goalById = useCallback((id) => allGoals.find(g => g.id === id), [allGoals]);
 
@@ -480,6 +489,97 @@ export function useAppState() {
     try { Object.keys(localStorage).filter(k => k.startsWith('zen-')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
     window.location.reload();
   }, []);
+
+  // ─── Supabase data source: auth (email OTP), hydrate, and reactive sync ───
+  const [session, setSession] = useState(null);
+  const [authReady, setAuthReady] = useState(!DB_MODE);
+  const [dbHydrated, setDbHydrated] = useState(!DB_MODE);
+  const [dbError, setDbError] = useState(null);
+  const uid = session?.user?.id || null;
+
+  // Track the auth session (only in DB mode).
+  useEffect(() => {
+    if (!DB_MODE) return;
+    if (!supabase) { setAuthReady(true); return; }
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => { if (active) { setSession(data.session); setAuthReady(true); } });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => { if (active) setSession(s); });
+    return () => { active = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  // Hydrate all state from the DB once, after sign-in.
+  useEffect(() => {
+    if (!DB_MODE || !supabase || !session || dbHydrated) return;
+    let active = true;
+    (async () => {
+      try {
+        const data = await loadAll(session.user.id);
+        if (!active) return;
+        setProfiles(data.profiles);
+        setAllGoals(data.goals);
+        setProjects(data.projects);
+        setCategories(data.categories);
+        setCollections(data.collections);
+        setNotes(data.notes);
+        setTasks(data.tasks);
+        setProjectGoals(data.projectGoals);
+        const s = data.settings;
+        if (s) {
+          setActiveProfileId(s.activeProfileId || 'personal');
+          if (s.density) setDensity(s.density);
+          if (s.aiMode) setAiModeRaw(s.aiMode);
+          setDyslexiaFont(!!s.dyslexiaFont);
+          if (s.primaryGoalId) setPrimaryGoalId(s.primaryGoalId);
+          setFocusIds(new Set(s.focusTaskIds || []));
+          setPinnedProjectIds(new Set(s.pinnedProjectIds || []));
+        }
+      } catch (e) {
+        console.error('DB hydrate failed:', e);
+        if (active) setDbError(e.message || 'Failed to load your data.');
+      } finally {
+        if (active) setDbHydrated(true);
+      }
+    })();
+    return () => { active = false; };
+  }, [session, dbHydrated]);
+
+  // Mirror each state slice back to Supabase (no-ops until hydrated).
+  const syncEnabled = DB_MODE && !!supabase && !!session && dbHydrated && !dbError;
+  useTableSync(M.goals.table, allGoals, M.goals.toRow, syncEnabled, uid);
+  useTableSync(M.categories.table, allCategories, M.categories.toRow, syncEnabled, uid);
+  useTableSync(M.collections.table, allCollections, M.collections.toRow, syncEnabled, uid);
+  useTableSync(M.projects.table, allProjects, M.projects.toRow, syncEnabled, uid);
+  useTableSync(M.notes.table, allNotes, M.notes.toRow, syncEnabled, uid);
+  useTableSync(M.tasks.table, allTasks, M.tasks.toRow, syncEnabled, uid);
+  useTableSync(M.profiles.table, profiles, M.profiles.toRow, syncEnabled, uid, 'id,user_id');
+  useJunctionSync(projectGoals, syncEnabled, uid);
+  const settingsObj = useMemo(() => ({
+    activeProfileId, density, aiMode, dyslexiaFont, primaryGoalId: primaryGoalRaw,
+    focusTaskIds: [...focusIds], pinnedProjectIds: [...pinnedProjectIds],
+  }), [activeProfileId, density, aiMode, dyslexiaFont, primaryGoalRaw, focusIds, pinnedProjectIds]);
+  useSettingsSync(settingsObj, syncEnabled, uid);
+
+  const sendLoginCode = useCallback(async (email) => {
+    if (!supabase) throw new Error('Supabase is not configured.');
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+    if (error) throw error;
+  }, []);
+  const verifyLoginCode = useCallback(async (email, token) => {
+    if (!supabase) throw new Error('Supabase is not configured.');
+    const { data, error } = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+    if (error) throw error;
+    setSession(data.session);
+  }, []);
+  const signOut = useCallback(async () => {
+    if (supabase) await supabase.auth.signOut();
+    setSession(null);
+  }, []);
+  const switchDataSource = useCallback((value) => { persistDataSource(value); window.location.reload(); }, []);
+  const seedDatabaseNow = useCallback(async () => {
+    if (!session) throw new Error('Sign in first.');
+    await seedDatabase(session.user.id);
+    window.location.reload();
+  }, [session]);
 
   const primaryGoalId = useMemo(() => (goals.find(g => g.id === primaryGoalRaw)?.id) ?? (goals[0]?.id ?? null), [goals, primaryGoalRaw]);
   const activeProfile = profiles.find(p => p.id === activeProfileId) || profiles[0];
@@ -551,6 +651,9 @@ export function useAppState() {
     goals, primaryGoalId, setPrimaryGoalId, goalById, goalIdsOf, projectsForGoal, phaseForProjectInGoal,
     goalsForProject, goalsForTask, projectGoals, setProjectGoalIds, setProjectPhase,
     addGoal, updateGoal, clearDatabase,
+    dataSource: DATA_SOURCE, dbMode: DB_MODE, supabaseConfigured: !!supabase,
+    session, user: session?.user || null, authReady, dbHydrated, dbError,
+    sendLoginCode, verifyLoginCode, signOut, switchDataSource, seedDatabaseNow,
     projects, projectById, addProject, updateProject,
     categories, addCategory, updateCategory, deleteCategory, tasksForCategory, categoryById,
     notes, noteById, addNote, updateNote, deleteNote, togglePinNote, notesForCollection,
@@ -593,8 +696,9 @@ export function useZenAI(extraCtx = '', { app, mode } = {}) {
   // Real Claude history (with tool_use/tool_result blocks), kept across turns.
   const apiRef = useRef([]);
   // Refs so the memoized `send` always sees current app/context without restale.
-  const appRef = useRef(app); appRef.current = app;
-  const ctxRef = useRef({ extraCtx, mode }); ctxRef.current = { extraCtx, mode };
+  const appRef = useRef(app);
+  const ctxRef = useRef({ extraCtx, mode });
+  useEffect(() => { appRef.current = app; ctxRef.current = { extraCtx, mode }; });
   const reset = useCallback(() => { setMessages(DEFAULT_CHAT); apiRef.current = []; }, []);
   const send = useCallback(async (userText) => {
     setMessages(m => [...m, { role: 'user', text: userText }]);

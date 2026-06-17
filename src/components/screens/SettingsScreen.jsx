@@ -46,6 +46,21 @@ function AiModeExplainer({ mode }) {
   );
 }
 
+function SeedButton({ app }) {
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    if (busy) return;
+    if (!window.confirm('Copy the demo goals, projects, and tasks into your database?')) return;
+    setBusy(true);
+    try { await app.seedDatabaseNow(); } catch (e) { alert(e.message || 'Failed to seed.'); setBusy(false); }
+  };
+  return (
+    <button onClick={run} disabled={busy} style={{ ...btnReset, padding: '7px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500, color: TOKENS.green, border: `1px solid ${TOKENS.green}`, background: TOKENS.surface, cursor: 'pointer' }}>
+      {busy ? 'Copying…' : 'Copy demo data'}
+    </button>
+  );
+}
+
 function SettingsGroup({ title, children, tour }) {
   return (
     <div data-tour={tour} style={{ background: TOKENS.surface, border: `1px solid ${TOKENS.line}`, borderRadius: TOKENS.radius, overflow: 'hidden' }}>
@@ -123,6 +138,30 @@ export default function SettingsScreen() {
         <SettingsGroup title="Account">
           <SettingRow label="Email"><span style={{ fontSize: 13, color: TOKENS.sub }}>—</span></SettingRow>
           <SettingRow label="Plan"><span style={{ fontSize: 13, color: TOKENS.sub }}>Free · 1 goal</span></SettingRow>
+        </SettingsGroup>
+        <SettingsGroup title="Data">
+          <SettingRow stack={frame === 'mobile'} label="Data source" hint="Demo data is local-only and resets on reload. Database stores your data in Supabase (sign-in required). Switching reloads the app.">
+            <div style={{ display: 'inline-flex', background: TOKENS.bg, border: `1px solid ${TOKENS.line}`, borderRadius: 999, padding: 3 }}>
+              {[['seed', 'Demo data'], ['supabase', 'Database']].map(([val, label]) => (
+                <button key={val} onClick={() => { if (app.dataSource !== val) app.switchDataSource(val); }}
+                  style={{ ...btnReset, padding: '6px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                    background: app.dataSource === val ? TOKENS.green : 'transparent', color: app.dataSource === val ? '#fff' : TOKENS.sub }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </SettingRow>
+          {app.dbMode && app.session && (
+            <>
+              <SettingRow label="Signed in as"><span style={{ fontSize: 13, color: TOKENS.sub }}>{app.user?.email || '—'}</span></SettingRow>
+              <SettingRow stack={frame === 'mobile'} label="Seed demo data" hint="Copies the sample goals, projects and tasks into your database so there's something to work with.">
+                <SeedButton app={app} />
+              </SettingRow>
+              <SettingRow stack={frame === 'mobile'} label="Sign out">
+                <button onClick={() => app.signOut()} style={{ ...btnReset, padding: '7px 14px', borderRadius: 999, fontSize: 12, fontWeight: 500, color: TOKENS.sub, border: `1px solid ${TOKENS.line}`, background: TOKENS.surface, cursor: 'pointer' }}>Sign out</button>
+              </SettingRow>
+            </>
+          )}
         </SettingsGroup>
         <SettingsGroup title="Labs">
           <SettingRow stack={frame === 'mobile'} label="Switch app version" hint="Go back to the classic app.">
